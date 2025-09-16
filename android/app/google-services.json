@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "368843601748",
+    "project_id": "renbo-74a86",
+    "storage_bucket": "renbo-74a86.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:368843601748:android:7e75b7a1a0688e1d4c7ac1",
+        "android_client_info": {
+          "package_name": "com.example.renbo_t"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvcgh3ahRXvgA4GVy6Lp9YmkR_agihs2c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

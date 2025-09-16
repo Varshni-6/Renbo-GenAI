@@ -1,0 +1,122 @@
+import 'package:flutter/material.dart';
+import 'package:renbo/api/gemini_service.dart';
+import 'package:renbo/utils/theme.dart';
+import 'package:renbo/widgets/chat_bubble.dart';
+
+class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final TextEditingController _controller = TextEditingController();
+  final GeminiService _geminiService = GeminiService();
+  final List<Map<String, String>> _messages = [];
+  bool _isLoading = false;
+
+  void _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _messages.add({'sender': 'user', 'text': text});
+      _isLoading = true;
+    });
+
+    _controller.clear();
+
+    try {
+      final response = await _geminiService.getGeminiResponse(text);
+      setState(() {
+        _messages.add({'sender': 'bot', 'text': response});
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _messages.add({
+          'sender': 'bot',
+          'text': 'I couldn\'t get a response. Try again. 😞',
+        });
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Renbot',
+          style: TextStyle(
+            color: AppTheme.darkGray,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final message = _messages[index];
+                return ChatBubble(
+                  text: message['text']!,
+                  isSender: message['sender'] == 'user',
+                );
+              },
+            ),
+          ),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: CircularProgressIndicator(color: AppTheme.primaryColor),
+            ),
+          _buildMessageComposer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageComposer() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+      color: Colors.white,
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              decoration: InputDecoration(
+                hintText: 'Type a message...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: AppTheme.lightGray,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20.0),
+              ),
+              onSubmitted: (_) => _sendMessage(),
+            ),
+          ),
+          const SizedBox(width: 8.0),
+          Container(
+            decoration: const BoxDecoration(
+              color: AppTheme.primaryColor,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.send, color: Colors.white),
+              onPressed: _sendMessage,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
