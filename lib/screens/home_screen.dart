@@ -6,6 +6,7 @@ import 'package:renbo/screens/chat_screen.dart';
 import 'package:renbo/screens/meditation_screen.dart';
 import 'package:renbo/screens/sessions_screen.dart';
 import 'package:renbo/screens/emotion_tracker.dart'; // Correct import for the emotion tracker screen
+import 'package:renbo/screens/hotlines_screen.dart'; // ✅ Import your new hotlines screen
 import 'package:renbo/widgets/mood_card.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -58,36 +59,59 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildMainButtons(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        _buildButton(
-          context,
-          icon: Icons.edit_note,
-          label: 'Journal',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const EmotionTrackerScreen()),
-          ),
+        Row(
+          children: [
+            _buildButton(
+              context,
+              icon: Icons.edit_note,
+              label: 'Journal',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EmotionTrackerScreen()),
+              ),
+            ),
+            const SizedBox(width: 16),
+            _buildButton(
+              context,
+              icon: Icons.chat_bubble_outline,
+              label: 'Chat with Ren',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChatScreen()),
+              ),
+            ),
+            const SizedBox(width: 16),
+            _buildButton(
+              context,
+              icon: Icons.headphones_outlined,
+              label: 'Meditation',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MeditationScreen()),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 16),
-        _buildButton(
-          context,
-          icon: Icons.chat_bubble_outline,
-          label: 'Chat with Ren',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ChatScreen()),
-          ),
-        ),
-        const SizedBox(width: 16),
-        _buildButton(
-          context,
-          icon: Icons.headphones_outlined,
-          label: 'Meditation',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const MeditationScreen()),
-          ),
+        const SizedBox(height: 16),
+
+        // ✅ New Row for Hotlines button
+        Row(
+          children: [
+            _buildButton(
+              context,
+              icon: Icons.phone_in_talk,
+              label: 'Hotlines',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => HotlinesScreen()),
+              ),
+            ),
+            // If you want, you can leave space for future buttons
+            const SizedBox(width: 16),
+            Expanded(child: Container()), // keeps layout aligned
+          ],
         ),
       ],
     );

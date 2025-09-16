@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:renbo/api/gemini_service.dart';
 import 'package:renbo/utils/theme.dart';
 import 'package:renbo/widgets/chat_bubble.dart';
+import 'hotlines_screen.dart'; // <-- import your hotlines screen
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -16,6 +17,18 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
 
+  // 🔎 Keywords for harmful/suicidal thoughts
+  final List<String> _alertKeywords = [
+    "suicide",
+    "kill myself",
+    "end my life",
+    "want to die",
+    "hopeless",
+    "can't go on",
+    "give up",
+    "depressed",
+  ];
+
   void _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
@@ -26,6 +39,11 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     _controller.clear();
+
+    // 🔎 Check for suicidal/harmful thoughts
+    if (_alertKeywords.any((word) => text.toLowerCase().contains(word))) {
+      _showHotlineSuggestion();
+    }
 
     try {
       final response = await _geminiService.getGeminiResponse(text);
@@ -42,6 +60,37 @@ class _ChatScreenState extends State<ChatScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  // ⚠️ Show hotline dialog
+  void _showHotlineSuggestion() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("⚠️ You’re Not Alone"),
+        content: const Text(
+          "It sounds like you’re going through a really tough time. "
+          "Please consider reaching out to a professional for immediate help.\n\n"
+          "Would you like to see a list of mental wellness hotlines now?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Not Now"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // close dialog
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => HotlinesScreen()),
+              );
+            },
+            child: const Text("View Hotlines"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
