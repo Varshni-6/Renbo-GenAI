@@ -33,9 +33,9 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Good Afternoon, ${AppConstants.initialUsername}!',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.darkGray,
@@ -156,14 +156,14 @@ class HomeScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.secondaryColor),
       ),
-      child: Row(
+      child: const Row(
         children: [
-          const Icon(Icons.spa, size: 40, color: AppTheme.secondaryColor),
-          const SizedBox(width: 16),
+          Icon(Icons.spa, size: 40, color: AppTheme.secondaryColor),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'Wellness Pond',
                   style: TextStyle(
