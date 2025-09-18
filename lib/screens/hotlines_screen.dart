@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Hotline {
-  final String name;         // e.g. "KIRAN Mental Health Helpline"
-  final String description;  // e.g. "For mental health support, stress, anxiety, depression"
+  final String name; // e.g. "KIRAN Mental Health Helpline"
+  final String
+      description; // e.g. "For mental health support, stress, anxiety, depression"
   final String contactPerson; // e.g. "Trained Mental Health Counselors"
   final String phone;
 
@@ -33,9 +34,10 @@ class HotlinesScreen extends StatelessWidget {
     // ),
     Hotline(
       name: "Sammy",
-      description: "Support for emotional distress, depression, suicidal thoughts.",
+      description:
+          "Support for emotional distress, depression, suicidal thoughts.",
       contactPerson: "Counselors for every emotional distress",
-      phone: "8248462012",
+      phone: "8939395353",
     ),
     // Hotline(
     //   name: "Snehi (Delhi-based NGO)",
