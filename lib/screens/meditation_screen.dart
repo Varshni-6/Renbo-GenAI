@@ -3,6 +3,8 @@ import 'package:renbo/utils/theme.dart';
 import 'package:lottie/lottie.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
+import 'white_noise_synthesizer.dart';
+import 'breathing_guide_page.dart';
 
 class MeditationScreen extends StatefulWidget {
   const MeditationScreen({super.key});
@@ -11,19 +13,16 @@ class MeditationScreen extends StatefulWidget {
   State<MeditationScreen> createState() => _MeditationScreenState();
 }
 
-class _MeditationScreenState extends State<MeditationScreen>
-    with SingleTickerProviderStateMixin {
+class _MeditationScreenState extends State<MeditationScreen> {
   final player = AudioPlayer();
+  late Timer _meditationTimer;
+
+  Duration _meditationTime = Duration.zero;
+  bool _meditationTimerIsRunning = false;
+
   bool isPlaying = false;
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
-
-  // Breathing guide state
-  late AnimationController _breathingController;
-  Timer? _breathingTimer;
-  bool _isBreathing = false;
-  String _breathingInstruction = "Breathe in";
-  int _countdown = 4;
 
   final List<Map<String, String>> _tracks = [
     {
@@ -58,17 +57,37 @@ class _MeditationScreenState extends State<MeditationScreen>
       setState(() {
         isPlaying = false;
         position = Duration.zero;
-        _breathingTimer?.cancel();
-        _breathingController.stop();
-        _isBreathing = false;
-        _countdown = 4;
       });
     });
+  }
 
-    _breathingController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    );
+  void _startMeditationTimer() {
+    if (_meditationTimerIsRunning) {
+      return;
+    }
+    _meditationTimerIsRunning = true;
+    _meditationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _meditationTime += const Duration(seconds: 1);
+      });
+    });
+  }
+
+  void _pauseMeditationTimer() {
+    if (_meditationTimerIsRunning) {
+      _meditationTimerIsRunning = false;
+      _meditationTimer.cancel();
+    }
+  }
+
+  void _resetMeditationTimer() {
+    if (_meditationTimerIsRunning) {
+      _meditationTimer.cancel();
+    }
+    setState(() {
+      _meditationTime = Duration.zero;
+      _meditationTimerIsRunning = false;
+    });
   }
 
   String _formatDuration(Duration d) {
@@ -81,19 +100,16 @@ class _MeditationScreenState extends State<MeditationScreen>
   @override
   void dispose() {
     player.dispose();
-    _breathingController.dispose();
-    _breathingTimer?.cancel();
+    _meditationTimer.cancel();
     super.dispose();
   }
 
   void _selectTrack(int index) async {
-    // If the same track is selected, just toggle play/pause
     if (_selectedTrackIndex == index) {
       _togglePlayPause();
       return;
     }
 
-    // Stop current playback and reset position
     await player.stop();
     setState(() {
       _selectedTrackIndex = index;
@@ -102,61 +118,19 @@ class _MeditationScreenState extends State<MeditationScreen>
       duration = Duration.zero;
     });
 
-    // Set and play new track
     final selectedTrackPath = _tracks[index]['path']!;
     await player.setSource(AssetSource(selectedTrackPath));
     await player.resume();
   }
 
   void _togglePlayPause() async {
-    if (_selectedTrackIndex == null) return; // Cannot play if no track is selected
-
+    if (_selectedTrackIndex == null) return;
     if (isPlaying) {
       await player.pause();
     } else {
       await player.resume();
     }
     setState(() => isPlaying = !isPlaying);
-  }
-
-  void _startBreathingGuide() async {
-    // Start audio if not already playing
-    if (!isPlaying && _selectedTrackIndex != null) {
-      await player.resume();
-      setState(() => isPlaying = true);
-    }
-
-    setState(() {
-      _isBreathing = true;
-      _breathingInstruction = "Breathe in";
-      _countdown = 4;
-    });
-
-    _breathingController.repeat(reverse: true);
-    _breathingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          if (_countdown > 1) {
-            _countdown--;
-          } else {
-            _countdown = 4;
-            _breathingInstruction = _breathingInstruction == "Breathe in" ? "Breathe out" : "Breathe in";
-          }
-        });
-      }
-    });
-  }
-
-  void _stopBreathingGuide() async {
-    _breathingTimer?.cancel();
-    _breathingController.stop();
-    await player.pause();
-    setState(() {
-      _isBreathing = false;
-      _countdown = 4;
-      _breathingInstruction = "Breathe in";
-      isPlaying = false;
-    });
   }
 
   @override
@@ -179,42 +153,116 @@ class _MeditationScreenState extends State<MeditationScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_isBreathing) _buildBreathingGuide(),
-            if (!_isBreathing) ...[
-              const SizedBox(height: 20),
-              const Text(
-                'Choose a track:',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.darkGray,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _tracks.length,
-                  itemBuilder: (context, index) {
-                    return _buildTrackCard(index);
-                  },
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (_selectedTrackIndex != null)
-                _buildAudioControls(),
-            ],
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isBreathing ? _stopBreathingGuide : _startBreathingGuide,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _isBreathing ? Colors.red : AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
+            Center(
               child: Text(
-                _isBreathing ? 'Stop Breathing Guide' : 'Start Breathing Guide',
-                style: const TextStyle(fontSize: 18, color: Colors.white),
+                _formatDuration(_meditationTime),
+                style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.darkGray),
               ),
             ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FloatingActionButton.extended(
+                  heroTag: 'meditation-timer-control',
+                  onPressed: _meditationTimerIsRunning
+                      ? _pauseMeditationTimer
+                      : _startMeditationTimer,
+                  label: Text(_meditationTimerIsRunning ? 'Pause' : 'Start'),
+                  icon: Icon(_meditationTimerIsRunning ? Icons.pause : Icons.play_arrow),
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                const SizedBox(width: 16),
+                FloatingActionButton.extended(
+                  heroTag: 'meditation-timer-reset',
+                  onPressed: _resetMeditationTimer,
+                  label: const Text('Reset'),
+                  icon: const Icon(Icons.refresh),
+                  backgroundColor: AppTheme.darkGray,
+                  foregroundColor: Colors.white,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (context) => const BreathingGuidePage()),
+                );
+              },
+              child: const Text('Start Breathing Guide'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (context) => const WhiteNoiseSynthesizerScreen()),
+                );
+              },
+              child: const Text('White Noise Synthesiser'),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Choose a track:',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.darkGray,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _tracks.length,
+                itemBuilder: (context, index) {
+                  return _buildTrackCard(index);
+                },
+              ),
+            ),
+            if (_selectedTrackIndex != null)
+              Column(
+                children: [
+                  Slider(
+                    min: 0,
+                    max: duration.inSeconds.toDouble(),
+                    value: position.inSeconds.toDouble(),
+                    onChanged: (value) async {
+                      final newPosition = Duration(seconds: value.toInt());
+                      await player.seek(newPosition);
+                      if (isPlaying) await player.resume();
+                    },
+                    activeColor: AppTheme.primaryColor,
+                    inactiveColor: AppTheme.primaryColor.withOpacity(0.3),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatDuration(position)),
+                        Text(_formatDuration(duration)),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _togglePlayPause,
+                    iconSize: 80,
+                    color: AppTheme.primaryColor,
+                    icon: Icon(
+                      isPlaying
+                          ? Icons.pause_circle_filled
+                          : Icons.play_circle_fill,
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),
@@ -279,86 +327,6 @@ class _MeditationScreenState extends State<MeditationScreen>
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAudioControls() {
-    return Column(
-      children: [
-        Slider(
-          min: 0,
-          max: duration.inSeconds.toDouble(),
-          value: position.inSeconds.toDouble(),
-          onChanged: (value) async {
-            final newPosition = Duration(seconds: value.toInt());
-            await player.seek(newPosition);
-            if (isPlaying) await player.resume();
-          },
-          activeColor: AppTheme.primaryColor,
-          inactiveColor: AppTheme.primaryColor.withOpacity(0.3),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(_formatDuration(position)),
-              Text(_formatDuration(duration)),
-            ],
-          ),
-        ),
-        IconButton(
-          onPressed: _togglePlayPause,
-          iconSize: 80,
-          color: AppTheme.primaryColor,
-          icon: Icon(
-            isPlaying
-                ? Icons.pause_circle_filled
-                : Icons.play_circle_fill,
-          ),
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildBreathingGuide() {
-    return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              _breathingInstruction,
-              style: const TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold, color: AppTheme.darkGray),
-            ),
-            const SizedBox(height: 50),
-            AnimatedBuilder(
-              animation: _breathingController,
-              builder: (context, child) {
-                // Determine the size of the circle based on the animation value.
-                final size = 150 + 100 * _breathingController.value;
-                return Container(
-                  width: size,
-                  height: size,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.6),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    _countdown.toString(), // Show the countdown inside the circle
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
         ),
       ),
     );

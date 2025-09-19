@@ -46,6 +46,9 @@ flutter:
     - assets/audio/zen.mp3
     - assets/audio/rain.mp3
     - assets/audio/soul.mp3
+    - assets/audio/white_noise.mp3
+    - assets/audio/pink_noise.mp3
+    - assets/audio/brown_noise.mp3
   fonts:
     - family: Poppins
       fonts:
